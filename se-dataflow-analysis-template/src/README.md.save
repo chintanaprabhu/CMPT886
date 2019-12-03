@@ -1,0 +1,43 @@
+Abstract domain:
+
+{SLEEPING, EATING, PLAYING, PLOTTING, RUNNING}  U {TOP, BOTTOM}
+
+* Though every kitten starts from the SLEEPING state, I would prefer to have a separete BOTTOM state as it makes things easier
+to merge the predecessors before the branch condition. If SLEEPING were the BOTTOM and merge needs to be performed with another state Eg. RUNNING, the transfer function would not be distinguishing between the movement in the lattice and the transfer
+funciton invocation.
+
+Meet and Transfer functions:
+
+SRC2/SRC1 | SLEEPING | EATING  | PLAYING  | PLOTTING  | RUNNING
+----------------------------------------------------------------
+SLEEPING  | SLEEPING | SLEPING | TOP      | SLEEPING  | TOP 
+----------------------------------------------------------------
+EATING    | EATING   | EATING  | EATING   | EATING    | EATING
+----------------------------------------------------------------
+PLAYING   | TOP      | TOP     | PLAYING  | PLAYING   | PLAYING
+----------------------------------------------------------------
+PLOTTING  | TOP      | TOP     | TOP      | PLOTTING  | PLOTTING
+----------------------------------------------------------------
+RUNNING   | RUNNING  | RUNNING | RUNNING  | RUNNING   | RUNNING
+----------------------------------------------------------------
+
+* The merge function I've implemented would function as per the above metrix. For any predecessor state in the top row looks 
+for appropriate successor value in the left most column and generate the merged value. I'm not transitioning to the BOTTOM state
+in the merge operation, as intrinsically SLEEPING is the bottom state for any instance of kitten.
+
+* Any instance of kitten transitions from one state to another state. If it transitions to TOP, we stop the analysis and print 
+error state without propagating the error any further in the analysis. The transfer would follow the below matrix:
+
+METHOD    |                     CURRENT STATE                      | TARGET STATE
+---------------------------------------------------------------------------------
+feed()    | SLEEPING, EATING, PLAYING, PLOTTING, RUNNING           | EATING
+---------------------------------------------------------------------------------
+scare()   | SLEEPING, EATING, PLAYING, PLOTTING, RUNNING           | RUNNING
+---------------------------------------------------------------------------------
+pet()     | SLEEPING, EATING, PLOTTING              		   | SLEEPING
+---------------------------------------------------------------------------------
+tease()   | PLOTTING, PLAYING, RUNNING      			   | PLAYING
+---------------------------------------------------------------------------------
+ignore()  | PLOTTING, RUNNING               			   | PLOTTING
+---------------------------------------------------------------------------------
+

@@ -1,0 +1,169 @@
+package ca.sfu.cmpt745.ex06.checker;
+
+import static ca.sfu.cmpt745.ex06.checker.KittenAnalysis.State.TOP;
+import static ca.sfu.cmpt745.ex06.checker.KittenAnalysis.State.SLEEPING;
+import static ca.sfu.cmpt745.ex06.checker.KittenAnalysis.State.EATING;
+import static ca.sfu.cmpt745.ex06.checker.KittenAnalysis.State.PLAYING;
+import static ca.sfu.cmpt745.ex06.checker.KittenAnalysis.State.PLOTTING;
+import static ca.sfu.cmpt745.ex06.checker.KittenAnalysis.State.RUNNING;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.EnumSet;
+
+import soot.BodyTransformer;
+import soot.Body;
+import soot.G;
+import soot.Local;
+import soot.Type;
+import soot.Unit;
+import soot.Value;
+import soot.ValueBox;
+import soot.toolkits.graph.DirectedGraph;
+import soot.toolkits.graph.ExceptionalUnitGraph;
+import soot.toolkits.graph.UnitGraph;
+import soot.toolkits.scalar.ForwardFlowAnalysis;
+
+import soot.jimple.InvokeExpr;
+import soot.jimple.SpecialInvokeExpr;
+import soot.jimple.VirtualInvokeExpr;
+import soot.jimple.InvokeStmt;
+import soot.jimple.Stmt;
+import soot.SootMethod;
+
+public class KittenAnalysis extends ForwardFlowAnalysis<Unit, Map<Value, KittenAnalysis.State>> {
+  public enum State {
+    TOP,
+    SLEEPING,
+    EATING,
+    PLAYING,
+    PLOTTING,
+    RUNNING
+  }
+
+  private UnitGraph g;
+  public KittenAnalysis (UnitGraph g) {
+    super(g);
+    this.g = g;
+
+//    buildBefore();
+    doAnalysis();
+  }
+
+/*   private void buildBefore() {
+    for (Unit s : g.getBody().getUtils()) {
+      System.out.println(s.toString());
+    }
+   }*/
+
+   @Override
+   protected void merge(Map<Value, State> src1, Map<Value, State> src2, Map<Value, State> dest) {
+	G.v().out.println("In merge method");
+        G.v().out.println("In MERGE - src1: " + src1);
+	G.v().out.println("In MERGE - src2: " + src2);
+	G.v().out.println("In MERGE - dest before: " + dest); 
+       // Merges two source flow sets into a destination flow set
+      KittenErrorReporter err1 = new KittenErrorReporter();
+      for (Value var1 : src1.keySet()) {
+      State inVal1 = src1.get(var1);
+      State inVal2 = src2.get(var1);
+      State outVal = dest.get(var1);
+      // System.out.println(inVal2);
+      // System.out.println("before out "+dest.get(var1));
+      if((inVal1.equals(RUNNING) || inVal1.equals(PLAYING)) || (inVal2.equals(RUNNING) || inVal2.equals(PLAYING))) {
+	dest.put(var1, TOP);
+        if(inVal1.equals(RUNNING) || inVal1.equals(PLAYING))
+		err1.reportError(var1.toString(), 10, "SLEEPING", inVal1.toString());
+	else 
+		err1.reportError(var1.toString(), 10, "SLEEPING", inVal2.toString());
+      }
+      else if((inVal1.equals(SLEEPING) || inVal1.equals(EATING)) || (inVal2.equals(SLEEPING) || inVal2.equals(EATING))) {
+	dest.put(var1, TOP);
+	if(inVal1.equals(SLEEPING) || inVal1.equals(EATING))
+	        err1.reportError(var1.toString(), 10, "PLAYING", inVal1.toString());
+	else 
+		err1.reportError(var1.toString(), 10, "PLAYING", inVal2.toString());
+      }
+      else if((inVal1.equals(SLEEPING) || inVal1.equals(EATING) || inVal1.equals(PLAYING)) || (inVal2.equals(SLEEPING) || inVal2.equals(EATING) || inVal2.equals(PLAYING))) {
+	dest.put(var1, TOP);
+	if(inVal1.equals(SLEEPING) || inVal1.equals(EATING) || inVal1.equals(PLAYING))
+		err1.reportError(var1.toString(), 10, "PLOTTING", inVal1.toString());
+	else 
+		err1.reportError(var1.toString(), 10, "PLOTTING", inVal2.toString());
+      }
+      else
+	dest.put(var1, outVal);
+   }
+}
+   @Override
+   protected void copy(Map<Value, State> src, Map<Value, State> dest) {
+	G.v().out.println("In copy method"); 
+       // Copies src to dest
+	dest.clear();
+    	dest.putAll(src);
+        G.v().out.println("In COPY - Src: " + src);
+   }
+
+   @Override
+   protected Map<Value, State> entryInitialFlow() {
+       // Returns the initial flow set (the flow set used a the beginning
+       // of the analysis)
+       return newInitialFlow();
+   }
+   @Override
+   protected Map<Value, State> newInitialFlow() {
+       Map<Value, State> initMap = new HashMap<Value, State>();
+       
+       for (Unit u : g.getBody().getUnits()) {
+           System.out.println(u.toString());
+        }
+	G.v().out.println("---------------------END UNITS------------------");
+       for ( ValueBox vb : g.getBody().getUseAndDefBoxes()) {
+            Value val = vb.getValue();
+	// G.v().out.println("Value: " + val.getUseBoxes());
+            if(val instanceof SpecialInvokeExpr) {
+		  SpecialInvokeExpr si = (SpecialInvokeExpr) val;
+		  if(si.getMethod().getDeclaringClass().toString().equals("ca.sfu.cmpt745.ex06.kittens.Kitten")) {
+		  	  Value v = (Value) si.getBase();
+//		  	  G.v().out.println("Value : " + v);
+		  	  initMap.put(v, SLEEPING);
+	     //  	  	  G.v().out.println("Initial State: " +initMap);
+ 		  }
+ 	    }
+         
+       }
+       return initMap;
+   }
+
+   @Override
+   protected void flowThrough(Map<Value, State> src, Unit node, Map<Value, State> dest) {
+       G.v().out.println("In FlowThrough");
+       KittenErrorReporter err1 = new KittenErrorReporter();
+       dest.putAll(src);
+       G.v().out.println("Src: " + src);
+       for(ValueBox vb : node.getUseAndDefBoxes()) {
+            Value val = vb.getValue();
+         if(val instanceof VirtualInvokeExpr) {
+         	    VirtualInvokeExpr vi = (VirtualInvokeExpr) val;
+		          if(dest.containsKey(vi.getBase())) {
+			             if(vi.getMethod().getSubSignature().equals("void pet()") && (dest.get(vi.getBase()).equals(RUNNING) ||  dest.get(vi.getBase()).equals(PLAYING))) {
+	         	          	 err1.reportError(vi.getBase().toString(), 10, dest.get(vi.getBase()).toString(), "SLEEPING");
+                   		         dest.put(vi.getBase(), SLEEPING);
+		   		     }
+                   if(vi.getMethod().getSubSignature().equals("void tease()") && (dest.get(vi.getBase()).equals(SLEEPING) ||  dest.get(vi.getBase()).equals(EATING))) {
+                       err1.reportError(vi.getBase().toString(), 10, dest.get(vi.getBase()).toString(), "PLAYING");
+                       dest.put(vi.getBase(), PLAYING);
+		   }
+                   if(vi.getMethod().getSubSignature().equals("void ignore()") && (dest.get(vi.getBase()).equals(SLEEPING) ||  dest.get(vi.getBase()).equals(EATING) || dest.get(vi.getBase()).equals(PLAYING))) {
+                       err1.reportError(vi.getBase().toString(), 10, dest.get(vi.getBase()).toString(), "PLOTTING");
+                       dest.put(vi.getBase(), PLOTTING);
+ 		   }
+                   if(vi.getMethod().getSubSignature().equals("void feed()"))
+                       dest.put(vi.getBase(), EATING);
+                   if(vi.getMethod().getSubSignature().equals("void scare()"))
+                       dest.put(vi.getBase(), RUNNING);
+              }
+        }
+       }
+   }
+}

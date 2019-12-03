@@ -1,0 +1,340 @@
+package ca.sfu.cmpt745.ex06.checker;
+
+import static ca.sfu.cmpt745.ex06.checker.KittenAnalysis.State.TOP;
+import static ca.sfu.cmpt745.ex06.checker.KittenAnalysis.State.BOTTOM;
+import static ca.sfu.cmpt745.ex06.checker.KittenAnalysis.State.SLEEPING;
+import static ca.sfu.cmpt745.ex06.checker.KittenAnalysis.State.EATING;
+import static ca.sfu.cmpt745.ex06.checker.KittenAnalysis.State.PLAYING;
+import static ca.sfu.cmpt745.ex06.checker.KittenAnalysis.State.PLOTTING;
+import static ca.sfu.cmpt745.ex06.checker.KittenAnalysis.State.RUNNING;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.EnumSet;
+
+import soot.BodyTransformer;
+import soot.Body;
+import soot.G;
+import soot.Local;
+import soot.Type;
+import soot.Unit;
+import soot.Value;
+import soot.ValueBox;
+import soot.toolkits.graph.DirectedGraph;
+import soot.toolkits.graph.ExceptionalUnitGraph;
+import soot.toolkits.graph.UnitGraph;
+import soot.toolkits.scalar.ForwardFlowAnalysis;
+
+import soot.tagkit.LineNumberTag;
+
+import soot.jimple.InvokeExpr;
+import soot.jimple.SpecialInvokeExpr;
+import soot.jimple.VirtualInvokeExpr;
+import soot.jimple.InvokeStmt;
+import soot.jimple.Stmt;
+import soot.jimple.IfStmt;
+import soot.jimple.GotoStmt;
+import soot.jimple.ConditionExpr;
+import soot.jimple.AssignStmt;
+import soot.SootMethod;
+
+public class KittenAnalysis extends ForwardFlowAnalysis<Unit, Map<Value, KittenAnalysis.State>> {
+  public enum State {
+    TOP,
+    SLEEPING,
+    EATING,
+    PLAYING,
+    PLOTTING,
+    RUNNING,
+    BOTTOM
+  }
+
+  private UnitGraph g;
+  public KittenAnalysis (UnitGraph g) {
+    super(g);
+    this.g = g;
+    doAnalysis();
+  }
+
+   @Override
+   protected void merge(Map<Value, State> src1, Map<Value, State> src2, Map<Value, State> dest) {
+//	G.v().out.println("In merge method");
+        G.v().out.println("In MERGE - src1: " + src1);
+	G.v().out.println("In MERGE - src2: " + src2);
+	G.v().out.println("In MERGE - dest before: " + dest);
+       // Merges two source flow sets into a destination flow set
+      KittenErrorReporter err1 = new KittenErrorReporter();
+
+      for (Value var1 : src1.keySet()) {
+      State inVal1 = src1.get(var1);
+      State inVal2 = src2.get(var1);
+     if( inVal2 == null || inVal2 == BOTTOM)
+	     dest.put(var1, inVal1);
+     else {
+      switch (inVal1) {
+        case SLEEPING:
+              switch(inVal2) {
+                case SLEEPING:
+                  dest.put(var1, SLEEPING);
+		              break;
+                case EATING:
+                  dest.put(var1, EATING);
+		              break;
+                case PLAYING:
+                  dest.put(var1, TOP);
+          //        err1.reportError(var1.toString(), 0, "PLAYING", inVal1.toString());
+                  break;
+                case PLOTTING:
+                  dest.put(var1, TOP);
+        //          err1.reportError(var1.toString(), 0, "PLOTTING", inVal1.toString());
+                  break;
+                case RUNNING:
+                  dest.put(var1, RUNNING);
+		              break;
+              }
+        break;
+      case EATING:
+          switch(inVal2) {
+              case SLEEPING:
+                dest.put(var1, SLEEPING);
+		            break;
+              case EATING:
+                dest.put(var1, EATING);
+		            break;
+              case PLAYING:
+                dest.put(var1, TOP);
+      //          err1.reportError(var1.toString(), 0, "PLAYING", inVal1.toString());
+                break;
+              case PLOTTING:
+                dest.put(var1, TOP);
+    //            err1.reportError(var1.toString(), 0, "PLOTTING", inVal1.toString());
+                break;
+              case RUNNING:
+                dest.put(var1, RUNNING);
+		            break;
+            }
+          break;
+    case PLAYING:
+          switch(inVal2) {
+             case SLEEPING:
+                  dest.put(var1, TOP);
+  //                err1.reportError(var1.toString(), 0, "SLEEPING", inVal1.toString());
+                  break;
+             case EATING:
+                  dest.put(var1, EATING);
+		              break;
+             case PLAYING:
+                  dest.put(var1, PLAYING);
+		              break;
+             case PLOTTING:
+                  dest.put(var1, TOP);
+//                  err1.reportError(var1.toString(), 0, "PLOTTING", inVal1.toString());
+                  break;
+           case RUNNING:
+                  dest.put(var1, RUNNING);
+		              break;
+          }
+          break;
+      case PLOTTING:
+                  switch(inVal2) {
+                  case SLEEPING:
+                       dest.put(var1, SLEEPING);
+		                   break;
+                  case EATING:
+                       dest.put(var1, EATING);
+		                   break;
+                  case PLAYING:
+                       dest.put(var1, PLAYING);
+		                   break;
+                  case PLOTTING:
+                       dest.put(var1, PLOTTING);
+		                   break;
+                  case RUNNING:
+                       dest.put(var1, RUNNING);
+		                   break;
+               }
+               break;
+     case RUNNING:
+          switch(inVal2) {
+            case SLEEPING:
+                dest.put(var1, TOP);
+//                err1.reportError(var1.toString(), 0, "SLEEPING", inVal1.toString());
+                break;
+            case EATING:
+                dest.put(var1, EATING);
+		            break;
+            case PLAYING:
+                dest.put(var1, PLAYING);
+		            break;
+            case PLOTTING:
+                dest.put(var1, PLOTTING);
+		            break;
+            case RUNNING:
+                dest.put(var1, RUNNING);
+		            break;
+          }
+          break;
+      }
+     }
+   }
+ G.v().out.println("dest after: "  + dest);
+}
+
+
+   @Override
+   protected void copy(Map<Value, State> src, Map<Value, State> dest) {
+	    dest.clear();
+    	dest.putAll(src);
+   }
+
+   @Override
+   protected Map<Value, State> entryInitialFlow() {
+       // Returns the initial flow set (the flow set used a the beginning
+       // of the analysis)
+       return newInitialFlow();
+   }
+   @Override
+   protected Map<Value, State> newInitialFlow() {
+       Map<Value, State> initMap = new HashMap<Value, State>();
+
+//	System.out.println("printing graph flows" );
+       for (Unit u : g.getBody().getUnits()) {
+//           System.out.println(u.toString());
+        }
+       for ( ValueBox vb : g.getBody().getUseAndDefBoxes()) {
+            Value val = vb.getValue();
+            if(val instanceof SpecialInvokeExpr) {
+		            SpecialInvokeExpr si = (SpecialInvokeExpr) val;
+		            if(si.getMethod().getDeclaringClass().toString().equals("ca.sfu.cmpt745.ex06.kittens.Kitten")) {
+		  	             Value v = (Value) si.getBase();
+		  	             initMap.put(v, BOTTOM);
+ 		            }
+ 	          }
+       }
+       return initMap;
+   }
+
+@Override
+   protected void flowThrough(Map<Value, State> src, Unit node, Map<Value, State> dest) {
+    //   G.v().out.println("In FlowThrough");
+       KittenErrorReporter err1 = new KittenErrorReporter();
+       dest.putAll(src);
+       G.v().out.println("Node: " + node);
+       if(node instanceof IfStmt){
+          IfStmt gt = (IfStmt) node;
+	        node = gt.getTarget();
+       }
+       if(node instanceof GotoStmt) {
+	        GotoStmt gts = (GotoStmt) node;
+//	  G.v().out.println("Goto stmt found: " + gts.getTarget());
+	     }
+	     if(node instanceof AssignStmt) {
+	        AssignStmt as = (AssignStmt) node;
+	        if(!(as.getRightOp().toString().equals("new ca.sfu.cmpt745.ex06.kittens.Kitten"))) {
+	          dest.put(as.getLeftOp(), dest.get(as.getRightOp()));
+	        }
+	     }
+       for(ValueBox vb : node.getUseAndDefBoxes()) {
+            Value val = vb.getValue();
+            if(val instanceof VirtualInvokeExpr) {
+  //	   G.v().out.println(" Virtual instance being processed : " + val.toString());
+            VirtualInvokeExpr vi = (VirtualInvokeExpr) val;
+  	    if(dest.containsKey(vi.getBase())) {
+                switch(vi.getMethod().getSubSignature().toString()) {
+                  case "void pet()":
+		    G.v().out.println("Kitten sleeping" + dest);
+                    switch(dest.get(vi.getBase())) {
+                      case RUNNING:
+                          err1.reportError(vi.getBase().toString(), Integer.parseInt(node.getTag("LineNumberTag").toString()), "SLEEPING", dest.get(vi.getBase()).toString());
+                          //			  break;
+                          System.exit(0);
+                      case PLAYING:
+                          err1.reportError(vi.getBase().toString(), Integer.parseInt(node.getTag("LineNumberTag").toString()), "SLEEPING", dest.get(vi.getBase()).toString());
+                          //			  break;
+                          System.exit(0);
+		                  case TOP:
+			                    err1.reportError(vi.getBase().toString(), Integer.parseInt(node.getTag("LineNumberTag").toString()), "SLEEPING", dest.get(vi.getBase()).toString());
+                          //			  break;
+			                    System.exit(0);
+		     case BOTTOM:
+			  
+                      defadest.put(vi.getBase(), SLEEPING);ult:
+                          dest.put(vi.getBase(), SLEEPING);
+		  	G.v().out.println("dest : " + dest);
+                    }
+                  break;
+                  case "void tease()":
+		   G.v().out.println("Kitten playing" + dest);
+                    switch(dest.get(vi.getBase())) {
+                      case SLEEPING:
+                          err1.reportError(vi.getBase().toString(), Integer.parseInt(node.getTag("LineNumberTag").toString()), "PLAYING", dest.get(vi.getBase()).toString());
+//			  break;
+                          System.exit(0);
+                      case EATING:
+                          err1.reportError(vi.getBase().toString(), Integer.parseInt(node.getTag("LineNumberTag").toString()), "PLAYING", dest.get(vi.getBase()).toString());
+//			  break;
+                          System.exit(0);
+		      case TOP:
+			  err1.reportError(vi.getBase().toString(), Integer.parseInt(node.getTag("LineNumberTag").toString()), "PLAYING", dest.get(vi.getBase()).toString());
+//			  break;
+			  System.exit(0);
+                      default:
+                          dest.put(vi.getBase(), PLAYING);
+			G.v().out.println("dest : " + dest);
+                    }
+                    break;
+                  case "void ignore()":
+		    G.v().out.println("Kitten plotting" + dest);
+                    switch(dest.get(vi.getBase())) {
+                      case SLEEPING:
+                        err1.reportError(vi.getBase().toString(), Integer.parseInt(node.getTag("LineNumberTag").toString()), "PLOTTING", dest.get(vi.getBase()).toString());
+//			break;
+                        System.exit(0);
+                      case EATING:
+                        err1.reportError(vi.getBase().toString(), Integer.parseInt(node.getTag("LineNumberTag").toString()), "PLOTTING", dest.get(vi.getBase()).toString());
+//			break;
+                        System.exit(0);
+                      case PLAYING:
+                        err1.reportError(vi.getBase().toString(), Integer.parseInt(node.getTag("LineNumberTag").toString()), "PLOTTING", dest.get(vi.getBase()).toString());
+//			break;
+                        System.exit(0);
+		      case TOP:
+	       		  err1.reportError(vi.getBase().toString(), Integer.parseInt(node.getTag("LineNumberTag").toString()), "PLOTTING", dest.get(vi.getBase()).toString());
+//			  break;
+			  System.exit(0);
+                      default:
+                        dest.put(vi.getBase(), PLOTTING);
+			G.v().out.println("dest : " + dest);
+                    }
+                    break;
+                  case "void feed()":
+			G.v().out.println("Kitten being fed" + dest);
+		    switch(dest.get(vi.getBase())) {
+			case TOP:
+	     		  err1.reportError(vi.getBase().toString(), Integer.parseInt(node.getTag("LineNumberTag").toString()), "EATING", dest.get(vi.getBase()).toString());
+//			  break;
+			  System.exit(0);
+			default:
+	                    dest.put(vi.getBase(), EATING);
+			    G.v().out.println("dest : " + dest);
+		    }
+                    break;
+                  case "void scare()":
+		    G.v().out.println("Kitten scared" + dest);
+		    switch(dest.get(vi.getBase())) {
+			case TOP:
+	  		  err1.reportError(vi.getBase().toString(), Integer.parseInt(node.getTag("LineNumberTag").toString()), "RUNNING", dest.get(vi.getBase()).toString());
+//			  break;
+			  System.exit(0);
+			default:
+	                    dest.put(vi.getBase(), RUNNING);
+			    G.v().out.println("dest : " + dest);
+		    }
+                    break;
+                }
+              }
+        }
+       }
+   }
+}
+
