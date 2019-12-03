@@ -1,0 +1,20 @@
+/usr/shared/CMPT/faculty/wsumner/base/env745/lib/python3.7/site-packages/pysmt/walkers/generic.py:43: DeprecationWarning: Using or importing the ABCs from 'collections' instead of from 'collections.abc' is deprecated, and in 3.8 it will stop working
+  if len(nodetypes) == 1 and isinstance(nodetypes[0], collections.Iterable):
+WARNING | 2019-10-28 11:09:38,614 | [36mcle.loader[0m | [36mThe main binary is a position-independent executable. It is being loaded with a base address of 0x400000.[0m
+WARNING | 2019-10-28 11:09:40,600 | [36mcle.loader[0m | [36mThe main binary is a position-independent executable. It is being loaded with a base address of 0x400000.[0m
+WARNING | 2019-10-28 11:09:42,217 | [32mangr.state_plugins.symbolic_memory[0m | [32mThe program is accessing memory or registers with an unspecified value. This could indicate unwanted behavior.[0m
+WARNING | 2019-10-28 11:09:42,217 | [32mangr.state_plugins.symbolic_memory[0m | [32mangr will cope with this by generating an unconstrained symbolic variable and continuing. You can resolve this by:[0m
+WARNING | 2019-10-28 11:09:42,217 | [32mangr.state_plugins.symbolic_memory[0m | [32m1) setting a value to the initial state[0m
+WARNING | 2019-10-28 11:09:42,217 | [32mangr.state_plugins.symbolic_memory[0m | [32m2) adding the state option ZERO_FILL_UNCONSTRAINED_{MEMORY,REGISTERS}, to make unknown regions hold null[0m
+WARNING | 2019-10-28 11:09:42,217 | [32mangr.state_plugins.symbolic_memory[0m | [32m3) adding the state option SYMBOL_FILL_UNCONSTRAINED_{MEMORY_REGISTERS}, to suppress these messages.[0m
+WARNING | 2019-10-28 11:09:42,218 | [32mangr.state_plugins.symbolic_memory[0m | [32mFilling register r13 with 8 unconstrained bytes referenced from 0x1021920 (__libc_init_first+0x10 in libc.so.6 (0x21920))[0m
+WARNING | 2019-10-28 11:09:42,220 | [32mangr.state_plugins.symbolic_memory[0m | [32mFilling register r12 with 8 unconstrained bytes referenced from 0x1021922 (__libc_init_first+0x12 in libc.so.6 (0x21922))[0m
+WARNING | 2019-10-28 11:09:42,225 | [32mangr.state_plugins.symbolic_memory[0m | [32mFilling register rbx with 8 unconstrained bytes referenced from 0x1021928 (__libc_init_first+0x18 in libc.so.6 (0x21928))[0m
+WARNING | 2019-10-28 11:09:42,340 | [32mangr.state_plugins.symbolic_memory[0m | [32mFilling register cc_ndep with 8 unconstrained bytes referenced from 0x10219e6 (__libc_init_first+0xd6 in libc.so.6 (0x219e6))[0m
+WARNING | 2019-10-28 11:09:42,644 | [32mangr.state_plugins.symbolic_memory[0m | [32mFilling register r15 with 8 unconstrained bytes referenced from 0x1021470 (PLT.free+0x1a8 in libc.so.6 (0x21470))[0m
+WARNING | 2019-10-28 11:09:42,646 | [32mangr.state_plugins.symbolic_memory[0m | [32mFilling register r14 with 8 unconstrained bytes referenced from 0x1021472 (PLT.free+0x1aa in libc.so.6 (0x21472))[0m
+WARNING | 2019-10-28 11:09:43,338 | [32mangr.state_plugins.symbolic_memory[0m | [32mFilling memory at 0x7ffffffffff0000 with 173 unconstrained bytes referenced from 0x109dc70 (strlen+0x0 in libc.so.6 (0x9dc70))[0m
+WARNING | 2019-10-28 11:09:43,917 | [32mangr.state_plugins.symbolic_memory[0m | [32mFilling memory at 0x7ffffffffff00ad with 9 unconstrained bytes referenced from 0x109dc70 (strlen+0x0 in libc.so.6 (0x9dc70))[0m
+WARNING | 2019-10-28 11:09:44,531 | [32mangr.state_plugins.symbolic_memory[0m | [32mFilling memory at 0x7ffffffffff00b6 with 9 unconstrained bytes referenced from 0x109dc70 (strlen+0x0 in libc.so.6 (0x9dc70))[0m
+WARNING | 2019-10-28 11:09:45,140 | [32mangr.state_plugins.symbolic_memory[0m | [32mFilling memory at 0x7ffffffffff00bf with 9 unconstrained bytes referenced from 0x109dc70 (strlen+0x0 in libc.so.6 (0x9dc70))[0m
+WARNING | 2019-10-28 11:09:45,750 | [32mangr.state_plugins.symbolic_memory[0m | [32mFilling memory at 0x7ffffffffff00c8 with 9 unconstrained bytes referenced from 0x109dc70 (strlen+0x0 in libc.so.6 (0x9dc70))[0m

@@ -1,0 +1,40 @@
+import angr
+import claripy
+
+def resolve_win(state):
+    # if the bytes of "WIN" are found in stdout it returns true
+    return  b"Nondigit argument" in state.posix.dumps(1)
+
+if __name__ == '__main__':
+    print("starting.")
+
+    # Declare project, load the binary
+    proj = angr.Project('bin/version1')
+
+    # Create a 32-bit symbolic bitvector named "password"
+    arg1 = claripy.BVS('sym_arg', 8 * 8)  # maximum 11 * 8 bits
+#    arg2 = claripy.BVS('sym_arg', 8 * 44)  # maximum 44 * 8 bits
+
+    # We construct an entry_state passing the two arguments
+    st = proj.factory.entry_state(args=['bin/version1', arg1, "B", "C", "D", "E"])
+    # he st.libc.max_strtol_len tweak tells the atoi/strtol symbolic representation to
+    # resolve strings that are of at most 11 bytes length (the default is 10)
+#    st.libc.max_strtol_len = 11
+
+    # Now we will create what in angr terms is called a simulation manager.
+    # https://docs.angr.io/core-concepts/pathgroups
+    pg = proj.factory.simgr(st)
+
+    # This can be read as: explore looking for the path p for which the current state
+    # p.state contains the string "WIN" in its standard output (p.state.posix.dumps(1),
+    # where 1 is the file descriptor for stdout).
+    pg.explore(find=resolve_win)
+
+    print("solution found")
+    s = pg.found[0]
+    print(s.posix.dumps(1)) # dump stdout
+
+    # Print and eval the fist argument
+    print("Arg1: ", s.solver.eval(arg1, cast_to=bytes))
+    # Print and eval the second argument
+ #   print("Arg2: ", s.solver.eval(arg2, cast_to=bytes))

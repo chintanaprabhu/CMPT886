@@ -1,0 +1,62 @@
+#!/usr/bin/env python3
+
+import angr
+import claripy
+import subprocess
+import itertools  
+
+def get_inputs_for_paths(program, program_1, num_args, bytes_per_arg):
+    project = angr.Project(program)
+    project_1 = angr.Project(program_1)
+
+    args = [program]
+    args.extend(claripy.BVS('arg{}'.format(arg_num + 1), 8*bytes_per_arg)
+                for arg_num in range(num_args))
+
+    args_1 = [program_1]
+    args_1.extend(claripy.BVS('arg{}'.format(arg_num + 1), 8*bytes_per_arg)
+                for arg_num in range(num_args))
+
+    list = ["87654321", "13579246", "12121212"]
+    args.extend(list)
+    args_1.extend(list)
+    
+    print(args)
+    print(args_1)
+    state = project.factory.full_init_state(args=args)
+    state_1 = project_1.factory.full_init_state(args=args_1)
+
+    sm = project.factory.simulation_manager(state)
+    sm_1 = project_1.factory.simulation_manager(state_1)
+    
+    print("sm exploration started")
+    sm.explore()
+    print("sm explored")
+    sm_1.explore()
+    print("sm_1 explored")
+
+    dict = {}
+    n = 0
+    values = []    
+
+    for state1, state2 in zip(sm.deadended, sm_1.deadended):
+        if (state1.posix.dumps(1) != state2.posix.dumps(1)):
+            for arg in args[1:2]:
+                values.append(state1.solver.eval(arg, cast_to=bytes))
+            print(values)
+            input()
+            dict[n] = values
+            values = []
+            n = n + 1
+    print(dict)
+                      
+if __name__ == '__main__':
+    print('Regression discovery via symex? I don\'t believe it exists.')
+    PROGRAM_1 = 'bin/version1'
+    PROGRAM_2 = 'bin/version2'
+    NUM_ARGS = 2
+    NUM_BYTES = 8
+    STDOUT = 1
+
+    get_inputs_for_paths(PROGRAM_1, PROGRAM_2, NUM_ARGS, NUM_BYTES)
+    print("input states generated")
